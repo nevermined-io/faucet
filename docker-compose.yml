@@ -1,0 +1,22 @@
+version: '2.1'
+services:
+  mongo:
+    image: mongo:4
+    ports:
+      - 27017:27017
+
+  faucet:
+    container_name: faucet
+    build: ./
+    ports:
+      - 3001:3001
+    environment:
+      NODE_ENV: 'production'
+      MONGO_URL: 'mongodb://mongo:27017/faucetdb'
+    depends_on:
+      - mongo
+
+networks:
+  default:
+    external:
+      name: nevermined_backend
