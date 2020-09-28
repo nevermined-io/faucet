@@ -5,7 +5,7 @@
 > Nevermined Faucet micro-service that allows to get Ether for Ethereum networks
 > [nevermined.io](https://nevermined.io)
 
-![CI Build](https://github.com/keyko-io/nevermined-sdk-js/workflows/Build/badge.svg)
+![CI Build](https://github.com/keyko-io/nevermined-faucet/workflows/Build/badge.svg)
 
 ---
 

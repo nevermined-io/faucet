@@ -1,13 +1,18 @@
-import express from 'express'
+import express, { response } from 'express'
 import { check, body, validationResult } from 'express-validator'
 import Eth from 'ethjs'
 import NeverminedFaucet from '../controllers/neverminedFaucet'
+import FaucetDb from '../models/db'
 import config from '../config'
 import pkg from '../../package.json'
+import logger from '../utils/logger'
 
 const { faucetNode, faucetEth } = config.server
 const { name, version } = pkg
 const faucetRoutes = express.Router()
+
+const faucetDb = new FaucetDb(config)
+faucetDb.ping()
 
 const network = faucetNode.includes('localhost')
     ? 'Spree'
@@ -81,18 +86,26 @@ faucetRoutes.post(
             })
         } else {
             try {
-                const response = await NeverminedFaucet.requestCrypto(
+                const trxHash = await NeverminedFaucet.requestCrypto(
+                    faucetDb,
                     req.body.address,
                     req.body.agent
                 )
-
-                const { trxHash } = response.result
-                res.status(200).json({
-                    success: true,
-                    message: `Successfully added ${faucetEth} ETH to your account.`,
-                    trxHash
-                })
+                if (trxHash != null) {
+                    logger.info(`Faucet: Success ${faucetEth}: ${trxHash}`)
+                    res.status(201).json({
+                        success: true,
+                        message: `Successfully added ${faucetEth} ETH to your account.`,
+                        trxHash
+                    })
+                } else {
+                    res.status(500).json({
+                        success: false,
+                        message: `Unable to assign Eth`
+                    })
+                }
             } catch (error) {
+                logger.error(`The error ${error}`)
                 res.status(500).json({ success: false, message: error.message })
             }
         }

@@ -3,10 +3,12 @@
 import BigNumber from 'bignumber.js'
 import moment from 'moment'
 import config from '../config'
-import client from '../server.js'
+import { FaucetDb } from '../models/db'
+// import client from '../server.js'
 import logger from '../utils/logger'
 import { getWeb3 } from '../utils/web3'
 
+const client = require('../server').client
 const web3 = getWeb3(config.server.faucetNode)
 const amountToTransfer = web3.utils.toWei(config.server.faucetEth.toString())
 
@@ -16,8 +18,9 @@ const NeverminedFaucet = {
      * @Param address faucet tokens recipient
      * @Param agent
      */
-    requestCrypto: async (requestAddress, agent) => {
+    requestCrypto: async (faucetDb, requestAddress, agent) => {
         const balance = await web3.eth.getBalance(config.server.faucetAddress)
+        logger.debug(`Faucet server balance: ${balance}`)
         if (
             new BigNumber(balance).isLessThan(new BigNumber(amountToTransfer))
         ) {
@@ -26,176 +29,84 @@ const NeverminedFaucet = {
             )
         }
 
-        const { body } = await client.search({
-            index: config.database.index,
-            body: {
-                query: {
-                    match: {
-                        address: requestAddress.toUpperCase()
-                    },
-                    range: {
-                        createdAt: {
-                            gte: new Date(Date.now() - 24 * 60 * 60 * 1000)
-                        }
-                    }
-                }
-            }
-        })
+        logger.debug(
+            `Searching for indexed document with address ${requestAddress} in ${config.database.index}`
+        )
 
-        if (body.hits.hits > 0) {
-            logger.debug(
-                'Creating document for address:' + requestAddress.toUpperCase()
+        let numDocuments = 0
+        let document
+        try {
+            const body = await faucetDb.searchAddress(
+                requestAddress,
+                config.database.index
             )
-
-            await client.index(
-                {
-                    index: config.database.index,
-                    _id: requestAddress.toUpperCase(),
-                    body: {
-                        address: requestAddress.toUpperCase(),
-                        ethAmount: config.server.faucetEth,
-                        agent: agent || 'server',
-                        createdAt: new Date(Date.now())
-                    }
-                },
-                function (err, resp, status) {
-                    logger.error(resp)
-                }
-            )
-
-            await client.indices.refresh({
-                index: config.database.index
-            })
+            numDocuments = body.hits.total
+            if (numDocuments > 0) document = body.hits.hits[0]._source
+        } catch (error) {
+            throw new Error(`Error searching for documents: ${error}`)
         }
 
-        // const doc = await Faucet.findOneAndUpdate(
-        //     {
-        //         $and: [
-        //             {
-        //                 createdAt: {
-        //                     $gt: new Date(Date.now() - 24 * 60 * 60 * 1000)
-        //                 }
-        //             },
-        //             {
-        //                 $or: [
-        //                     {
-        //                         address: requestAddress.toUpperCase()
-        //                     }
-        //                 ]
-        //             }
-        //         ]
-        //     },
-        //     {
-        //         $setOnInsert: {
-        //             address: requestAddress.toUpperCase(),
-        //             ethAmount: config.server.faucetEth,
-        //             agent: agent || 'server'
-        //         },
-        //         $inc: { insert: 1 }
-        //     },
-        //     {
-        //         upsert: true,
-        //         new: true
-        //     }
-        // )
+        logger.debug(`Hits: ${numDocuments}`)
 
         if (
+            numDocuments < 1 ||
             config.server.faucetTimeSpan === 0 ||
             config.server.faucetTimeSpan === '0'
         ) {
-            const recordId = doc._id
-            const response = await NeverminedFaucet.transferEther(
-                requestAddress,
-                recordId
+            logger.debug(
+                'Transfering Ether to address ' + requestAddress.toUpperCase()
             )
-            return response
+
+            try {
+                const hash = await NeverminedFaucet.transferEther(
+                    requestAddress
+                )
+                logger.debug(`Transfered ETH to address, hash: ${hash}`)
+                await faucetDb.index(
+                    requestAddress,
+                    config.server.faucetEth,
+                    hash,
+                    agent
+                )
+                logger.debug(
+                    `Added document to the database for addres ${requestAddress}`
+                )
+                return hash
+            } catch (error) {
+                logger.error(`Error during the Eth allocation: ${error}`)
+                return
+            }
         } else {
-            // if (doc.insert !== 1) {
-            //     const lastRequest = moment(
-            //         doc.createdAt,
-            //         'YYYY-MM-DD HH:mm:ss'
-            //     ).add(config.server.faucetTimeSpan, 'h')
-            //     const reqTimestamp = moment()
-            //     const diffStr = moment
-            //         .utc(lastRequest.diff(reqTimestamp))
-            //         .format('HH:mm:ss')
-            //     const errorMsg = `Already requested. You can request again in ${diffStr}.`
-            //     throw new Error(errorMsg)
-            // } else {
-            //     const recordId = doc._id
-            //     const response = await NeverminedFaucet.transferEther(
-            //         requestAddress,
-            //         recordId
-            //     )
-            //     return response
-            // }
+            logger.debug(`Document already found: ${document.ethTrxHash}`)
+            const lastRequest = moment(
+                document.createdAt,
+                'YYYY-MM-DD HH:mm:ss'
+            ).add(config.server.faucetTimeSpan, 'h')
+            const reqTimestamp = moment()
+            const diffStr = moment
+                .utc(lastRequest.diff(reqTimestamp))
+                .format('HH:mm:ss')
+            const errorMsg = `Already requested. You can request again in ${diffStr}.`
+            throw new Error(errorMsg)
         }
     },
 
     /**
      * Function to transfer ETH to requestAddress
-     * @Param nevermined Nevermined instance
      * @Param requestAddress faucet tokens recipient
-     * @Param faucet record _id
      */
-    transferEther: (requestAddress, recordId) => {
-        return new Promise((resolve, reject) => {
-            web3.eth.personal
-                .sendTransaction(
-                    {
-                        from: config.server.faucetAddress,
-                        to: requestAddress,
-                        value: amountToTransfer,
-                        gas: config.server.faucetGas,
-                        gasPrice: config.server.faucetGasPrice
-                    },
-                    config.server.faucetPassword
-                )
-                .then((hash) => {
-                    logger.log(`ETH transaction hash ${hash}`)
-                    // Faucet.findOneAndUpdate(
-                    //     {
-                    //         _id: recordId
-                    //     },
-                    //     {
-                    //         ethTrxHash: hash
-                    //     },
-                    //     (err, rec) => {
-                    //         if (err) {
-                    //             logger.error(
-                    //                 `Failed updating faucet record ${err}`
-                    //             )
-                    //         }
-                    //         resolve({
-                    //             statusCode: 200,
-                    //             result: {
-                    //                 success: true,
-                    //                 trxHash: hash
-                    //             }
-                    //         })
-                    //     }
-                    // )
-                })
-                .catch((err) => {
-                    logger.error(`Failed transfer ${err}`)
-                    // Faucet.findOneAndUpdate(
-                    //     {
-                    //         _id: recordId
-                    //     },
-                    //     {
-                    //         error: err
-                    //     },
-                    //     (err, rec) => {
-                    //         if (err) {
-                    //             logger.error(
-                    //                 `Failed updating faucet record ${err}`
-                    //             )
-                    //         }
-                    //         resolve()
-                    //     }
-                    // )
-                })
-        })
+    transferEther: async (requestAddress) => {
+        const hash = web3.eth.personal.sendTransaction(
+            {
+                from: config.server.faucetAddress,
+                to: requestAddress,
+                value: amountToTransfer,
+                gas: config.server.faucetGas,
+                gasPrice: config.server.faucetGasPrice
+            },
+            config.server.faucetPassword
+        )
+        return hash
     },
 
     /**

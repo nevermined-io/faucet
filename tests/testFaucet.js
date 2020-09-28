@@ -2,13 +2,19 @@ import path from 'path'
 import chai from 'chai'
 import chaiHttp from 'chai-http'
 import mockedEnv from 'mocked-env'
+import FaucetDb from '../src/models/db'
+
 // import decache from 'decache'
 
-require('dotenv').config({ path: path.join(__dirname, '/.env.test') })
+require('dotenv').config({
+    path: path.join(__dirname, '/.env.test')
+})
+import config from '../src/config'
 
 chai.use(chaiHttp)
 
 const app = require('../src/server').default
+const faucetDb = new FaucetDb(config)
 
 const { expect } = chai
 let restore
@@ -49,7 +55,8 @@ describe('Test: POST /faucet', () => {
     })
 
     beforeEach(() => {
-        //Faucet.deleteMany({}, () => {})
+        console.log(`Deleting documents from index`)
+        faucetDb.deleteIndexDocuments(config.database.index)
     })
 
     it('should not POST without an address', (done) => {
@@ -96,17 +103,18 @@ describe('Test: POST /faucet', () => {
         const req = {
             address: '0x1F08a98e53b2bDd0E6aE8E1140017e26E935780D'
         }
+
         chai.request(app)
             .post('/faucet')
             .send(req)
-            .end((err, res) => {
-                expect(err).to.equal(null)
-                expect(res).to.have.status(200)
+            .then((res) => {
+                expect(res).to.have.status(201)
                 expect(res.body).to.not.be.null // eslint-disable-line no-unused-expressions
                 expect(res.body.success).to.eql(true)
                 expect(res.body.record).to.not.be.null // eslint-disable-line no-unused-expressions
                 done()
             })
+            .catch(done)
     })
 
     it('should not be able to requets tokens in less than 24 hours', (done) => {
@@ -120,7 +128,7 @@ describe('Test: POST /faucet', () => {
                 expect(err).to.equal(null)
                 expect(res.body).not.equal(null)
                 expect(res.body.success).to.eql(true)
-                expect(res).to.have.status(200)
+                expect(res).to.have.status(201)
 
                 chai.request(app)
                     .post('/faucet')
