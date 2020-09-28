@@ -28,7 +28,8 @@ jobs:
         cd ..
     - name: Run integration tests
       env:
-        MONGO_URL: "mongodb://localhost:27017/faucetdb"
+        ELASTIC_URL: "http://localhost:9200"
+        ELASTIC_INDEX: "faucetdb"
       run: |
         ./scripts/wait-nevermined.sh
         npm run coverage
