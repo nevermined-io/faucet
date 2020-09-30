@@ -25,17 +25,19 @@ class FaucetDb {
     }
 
     indexExists(indexName) {
-        return this.client.indices.exists({
-            index: indexName
-        })
+        return this.client.indices
+            .exists({
+                index: indexName
+            })
+            .catch(logger.error(`Error checking index`))
     }
 
     async createIndex(indexName) {
         logger.log(`Creating index ${indexName}`)
         return this.client.indices
             .create({ index: indexName })
-            .catch()
             .then(logger.log(`Index created ${indexName}`))
+            .catch(logger.error(`Error creating index ${indexName}`))
     }
 
     initMapping(indexName) {
@@ -53,11 +55,14 @@ class FaucetDb {
                     }
                 }
             })
-            .catch()
+            .catch(logger.error(`Error setting mapping to index ${indexName}`))
     }
 
     async ping() {
-        this.client.ping().then(logger.log(`Ping returned`))
+        this.client
+            .ping()
+            .then(logger.debug(`Ping returned`))
+            .catch(logger.error(`Unable to contact Elastic server`))
     }
 
     deleteIndexDocuments(indexName) {
@@ -71,7 +76,7 @@ class FaucetDb {
                     }
                 }
             })
-            .catch()
+            .catch(logger.error(`Error deleting documents`))
     }
 
     async index(ethAddress, faucetEth, hash, agent) {
@@ -95,38 +100,42 @@ class FaucetDb {
     }
 
     async searchAddress(ethAddress, indexName) {
-        const { body } = await this.client.search({
-            index: indexName,
-            body: {
-                query: {
-                    bool: {
-                        must: [
-                            {
-                                match: {
-                                    address: ethAddress.toUpperCase()
-                                }
-                            },
-                            {
-                                range: {
-                                    createdAt: {
-                                        gte: new Date(
-                                            Date.now() - 24 * 60 * 60 * 1000
-                                        )
+        const { body } = await this.client
+            .search({
+                index: indexName,
+                body: {
+                    query: {
+                        bool: {
+                            must: [
+                                {
+                                    match: {
+                                        address: ethAddress.toUpperCase()
+                                    }
+                                },
+                                {
+                                    range: {
+                                        createdAt: {
+                                            gte: new Date(
+                                                Date.now() - 24 * 60 * 60 * 1000
+                                            )
+                                        }
                                     }
                                 }
-                            }
-                        ]
+                            ]
+                        }
                     }
                 }
-            }
-        })
+            })
+            .catch(logger.error(`Error running searchAddress query`))
         return body
     }
 
     async refresh(indexName) {
-        this.client.indices.refresh({
-            index: indexName
-        })
+        this.client.indices
+            .refresh({
+                index: indexName
+            })
+            .catch(logger.error(`Error refreshing index`))
     }
 }
 

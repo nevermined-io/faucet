@@ -13,7 +13,7 @@ export default {
         faucetGasPrice: process.env.FAUCET_GASPRICE || '1'
     },
     database: {
-        uri: process.env.ELASTIC_URL || 'http://localhost:9201',
+        uri: process.env.ELASTIC_URL || 'http://localhost:9200',
         user: process.env.ELASTIC_USER || 'elastic',
         password: process.env.ELASTIC_PASSWORD || 'changeme',
         index: process.env.ELASTIC_INDEX || 'faucetdb'
