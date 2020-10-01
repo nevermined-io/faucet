@@ -54,9 +54,12 @@ describe('Test: POST /faucet', () => {
         })
     })
 
-    beforeEach(() => {
-        console.log(`Deleting documents from index`)
-        faucetDb.deleteIndexDocuments(config.database.index)
+    beforeEach(async function () {
+        if (faucetDb.indexExists(config.database.index)) {
+            console.log(`Deleting documents from index`)
+            await faucetDb.deleteIndexDocuments(config.database.index)
+            console.log(`Deleted documents!`)
+        }
     })
 
     it('should not POST without an address', (done) => {
@@ -127,9 +130,7 @@ describe('Test: POST /faucet', () => {
             .end((err, res) => {
                 expect(err).to.equal(null)
                 expect(res.body).not.equal(null)
-                expect(res.body.success).to.eql(true)
                 expect(res).to.have.status(201)
-
                 chai.request(app)
                     .post('/faucet')
                     .send(req)
@@ -143,6 +144,31 @@ describe('Test: POST /faucet', () => {
                         expect(res).to.have.status(500)
                         done()
                     })
+            })
+    })
+
+    it('should not be able to find a transaction for an existing request', (done) => {
+        const req = {
+            address: '0x1F08a98e53b2bDd0E6aE8E1140017e26E935780D'
+        }
+        let trxHash = ''
+        chai.request(app)
+            .post('/faucet')
+            .send(req)
+            .end((err, res) => {
+                expect(err).to.equal(null)
+                expect(res.body).not.equal(null)
+                expect(res.body.success).to.eql(true)
+                expect(res).to.have.status(201)
+                trxHash = res.body.trxHash
+                done()
+            })
+
+        chai.request(app)
+            .get(`/trxhash?id=${trxHash}`)
+            .end((err, res) => {
+                res.should.have.status(200)
+                done()
             })
     })
 

@@ -9,9 +9,7 @@ import config from './config'
 import logger from './utils/logger'
 import faucetRoutes from './routes/faucet'
 
-const { Client } = require('@elastic/elasticsearch')
-
-logger.info('Starting Faucet Server...')
+console.log('Starting Faucet Server...')
 
 const app = express()
 
@@ -27,7 +25,7 @@ const server = app.listen(config.server.port, (error) => {
         logger.error(error)
         process.exit(1)
     }
-    logger.info(
+    console.log(
         boxen(
             `Nevermined Faucet Server\n   running on port ${config.server.port}`,
             {
