@@ -11,11 +11,11 @@ require('dotenv').config({
 })
 import config from '../src/config'
 
+const faucetDb = new FaucetDb(config)
+
 chai.use(chaiHttp)
 
 const app = require('../src/server').default
-const faucetDb = new FaucetDb(config)
-
 const { expect } = chai
 let restore
 
@@ -55,11 +55,16 @@ describe('Test: POST /faucet', () => {
     })
 
     beforeEach(async function () {
-        if (faucetDb.indexExists(config.database.index)) {
+        const exists = await faucetDb.indexExists(config.database.index)
+        if (exists) {
             console.log(`Deleting documents from index`)
             await faucetDb.deleteIndexDocuments(config.database.index)
             console.log(`Deleted documents!`)
+        } else {
+            console.log(`Index doesn't exist, creating it`)
+            await faucetDb.initializeIndex(config.database.index)
         }
+        await faucetDb.refresh(config.database.index)
     })
 
     it('should not POST without an address', (done) => {
@@ -147,7 +152,7 @@ describe('Test: POST /faucet', () => {
             })
     })
 
-    it('should not be able to find a transaction for an existing request', (done) => {
+    it('should be able to find a transaction for an existing request', (done) => {
         const req = {
             address: '0x1F08a98e53b2bDd0E6aE8E1140017e26E935780D'
         }

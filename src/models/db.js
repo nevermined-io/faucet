@@ -22,12 +22,14 @@ class FaucetDb {
     }
 
     async initializeIndex(indexName) {
-        const exists = this.indexExists(indexName)
+        const exists = await this.indexExists(indexName)
         logger.debug(`Index Exists: ${exists}`)
         if (!exists) {
-            this.createIndex(indexName)
+            await this.createIndex(indexName)
                 .then(this.initMapping(indexName))
-                .catch(logger.error(`Error initializing index`))
+                .catch((error) =>
+                    logger.error(`Error initializing index: ${error}`)
+                )
         }
     }
 
@@ -46,14 +48,28 @@ class FaucetDb {
 
     async createIndex(indexName) {
         logger.debug(`Creating index ${indexName}`)
-        return this.client.indices
-            .create({ index: indexName })
-            .then(logger.debug(`Index created ${indexName}`))
-            .catch(logger.error(`Error creating index ${indexName}`))
+        try {
+            return await this.client.indices.create({
+                index: indexName
+            })
+        } catch (error) {
+            logger.error(`Error creating index ${indexName} - ${error}`)
+        }
     }
 
-    initMapping(indexName) {
-        return this.client.indices
+    async deleteIndex(indexName) {
+        logger.debug(`Deleting index ${indexName}`)
+        try {
+            return await this.client.indices.delete({
+                index: indexName
+            })
+        } catch (error) {
+            logger.error(`Error deleting index ${indexName} - ${error}`)
+        }
+    }
+
+    async initMapping(indexName) {
+        return await this.client.indices
             .putMapping({
                 index: indexName,
                 type: 'request',
@@ -67,7 +83,11 @@ class FaucetDb {
                     }
                 }
             })
-            .catch(logger.error(`Error setting mapping to index ${indexName}`))
+            .catch((error) =>
+                logger.error(
+                    `Error setting mapping to index ${indexName} - ${error}`
+                )
+            )
     }
 
     async ping() {
@@ -139,9 +159,7 @@ class FaucetDb {
                     }
                 }
             })
-            .catch((error) =>
-                logger.error(`Error running searchAddress query: ${error}`)
-            )
+            .catch(logger.error(`Error running searchAddress query`))
         return body
     }
 
@@ -162,7 +180,7 @@ class FaucetDb {
     }
 
     async refresh(indexName) {
-        this.client.indices
+        await this.client.indices
             .refresh({
                 index: indexName
             })
