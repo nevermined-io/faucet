@@ -4,42 +4,72 @@ const { Client } = require('@elastic/elasticsearch')
 
 class FaucetDb {
     constructor(config) {
-        this.client = new Client({
-            node: config.database.uri,
-            auth: {
-                username: config.database.username,
-                password: config.database.password
-            },
-            maxRetries: 5,
-            requestTimeout: 60000
-        })
         try {
-            if (!this.indexExists(config.database.index)) {
-                this.createIndex(config.database.index).then(
-                    this.initMapping(config.database.index)
-                )
-            }
+            this.client = new Client({
+                node: config.database.uri,
+                auth: {
+                    username: config.database.username,
+                    password: config.database.password
+                },
+                maxRetries: 5,
+                requestTimeout: 60000
+            })
+            this.ping()
+            this.initializeIndex(config.database.index)
         } catch (error) {
-            logger.error(error)
+            logger.error(`Unable to initialize client: ${error}`)
         }
     }
 
-    indexExists(indexName) {
-        return this.client.indices.exists({
-            index: indexName
-        })
+    async initializeIndex(indexName) {
+        const exists = await this.indexExists(indexName)
+        logger.debug(`Index Exists: ${exists}`)
+        if (!exists) {
+            await this.createIndex(indexName)
+                .then(this.initMapping(indexName))
+                .catch((error) =>
+                    logger.error(`Error initializing index: ${error}`)
+                )
+        }
+    }
+
+    async indexExists(indexName) {
+        logger.debug(`Checking if index exists`)
+        try {
+            const result = await this.client.indices.exists({
+                index: indexName
+            })
+            return result.body
+        } catch (error) {
+            logger.error(`Error checking index: ${error}`)
+            return false
+        }
     }
 
     async createIndex(indexName) {
-        logger.log(`Creating index ${indexName}`)
-        return this.client.indices
-            .create({ index: indexName })
-            .catch()
-            .then(logger.log(`Index created ${indexName}`))
+        logger.debug(`Creating index ${indexName}`)
+        try {
+            return await this.client.indices.create({
+                index: indexName
+            })
+        } catch (error) {
+            logger.error(`Error creating index ${indexName} - ${error}`)
+        }
     }
 
-    initMapping(indexName) {
-        return this.client.indices
+    async deleteIndex(indexName) {
+        logger.debug(`Deleting index ${indexName}`)
+        try {
+            return await this.client.indices.delete({
+                index: indexName
+            })
+        } catch (error) {
+            logger.error(`Error deleting index ${indexName} - ${error}`)
+        }
+    }
+
+    async initMapping(indexName) {
+        return await this.client.indices
             .putMapping({
                 index: indexName,
                 type: 'request',
@@ -53,15 +83,24 @@ class FaucetDb {
                     }
                 }
             })
-            .catch()
+            .catch((error) =>
+                logger.error(
+                    `Error setting mapping to index ${indexName} - ${error}`
+                )
+            )
     }
 
     async ping() {
-        this.client.ping().then(logger.log(`Ping returned`))
+        this.client
+            .ping()
+            .then(logger.debug(`Ping returned`))
+            .catch((error) =>
+                logger.error(`Unable to contact Elastic server: ${error}`)
+            )
     }
 
-    deleteIndexDocuments(indexName) {
-        this.client
+    async deleteIndexDocuments(indexName) {
+        await this.client
             .deleteByQuery({
                 index: indexName,
                 refresh: true,
@@ -71,12 +110,14 @@ class FaucetDb {
                     }
                 }
             })
-            .catch()
+            .catch((error) =>
+                logger.error(`Error deleting documents: ${error}`)
+            )
     }
 
     async index(ethAddress, faucetEth, hash, agent) {
-        this.client.index(
-            {
+        await this.client
+            .index({
                 index: config.database.index,
                 type: 'request',
                 refresh: true,
@@ -87,46 +128,63 @@ class FaucetDb {
                     agent: agent || 'server',
                     createdAt: new Date(Date.now())
                 }
-            },
-            function (err, resp, status) {
-                logger.error(`Error: ${resp}`)
-            }
-        )
+            })
+            .then(logger.debug(`Inserted document with address ${ethAddress}`))
     }
 
     async searchAddress(ethAddress, indexName) {
-        const { body } = await this.client.search({
-            index: indexName,
-            body: {
-                query: {
-                    bool: {
-                        must: [
-                            {
-                                match: {
-                                    address: ethAddress.toUpperCase()
-                                }
-                            },
-                            {
-                                range: {
-                                    createdAt: {
-                                        gte: new Date(
-                                            Date.now() - 24 * 60 * 60 * 1000
-                                        )
+        const { body } = await this.client
+            .search({
+                index: indexName,
+                body: {
+                    query: {
+                        bool: {
+                            must: [
+                                {
+                                    match: {
+                                        address: ethAddress.toUpperCase()
+                                    }
+                                },
+                                {
+                                    range: {
+                                        createdAt: {
+                                            gte: new Date(
+                                                Date.now() - 24 * 60 * 60 * 1000
+                                            )
+                                        }
                                     }
                                 }
-                            }
-                        ]
+                            ]
+                        }
                     }
                 }
-            }
-        })
+            })
+            .catch(logger.error(`Error running searchAddress query`))
+        return body
+    }
+
+    async searchTransaction(trxHash, indexName) {
+        const { body } = await this.client
+            .search({
+                index: indexName,
+                body: {
+                    query: {
+                        match: {
+                            ethTrxHash: trxHash
+                        }
+                    }
+                }
+            })
+            .catch(logger.error(`Error running searchTransaction query`))
         return body
     }
 
     async refresh(indexName) {
-        this.client.indices.refresh({
-            index: indexName
-        })
+        await this.client.indices
+            .refresh({
+                index: indexName
+            })
+            .catch(logger.error(`Error refreshing index`))
     }
 }
 

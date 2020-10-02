@@ -12,7 +12,6 @@ const { name, version } = pkg
 const faucetRoutes = express.Router()
 
 const faucetDb = new FaucetDb(config)
-faucetDb.ping()
 
 const network = faucetNode.includes('localhost')
     ? 'Spree'
@@ -92,7 +91,7 @@ faucetRoutes.post(
                     req.body.agent
                 )
                 if (trxHash != null) {
-                    logger.info(`Faucet: Success ${faucetEth}: ${trxHash}`)
+                    logger.info(`Faucet Success: ${trxHash}`)
                     res.status(201).json({
                         success: true,
                         message: `Successfully added ${faucetEth} ETH to your account.`,
