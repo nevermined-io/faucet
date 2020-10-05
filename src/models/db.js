@@ -24,12 +24,11 @@ class FaucetDb {
     async initializeIndex(indexName) {
         const exists = await this.indexExists(indexName)
         logger.debug(`Index Exists: ${exists}`)
-        if (!exists) {
+        try {
             await this.createIndex(indexName)
-                .then(this.initMapping(indexName))
-                .catch((error) =>
-                    logger.error(`Error initializing index: ${error}`)
-                )
+            await this.initMapping(indexName)
+        } catch (error) {
+            logger.error(`Error initializing index: ${error}`)
         }
     }
 
@@ -75,11 +74,11 @@ class FaucetDb {
                 type: 'request',
                 body: {
                     properties: {
-                        address: { type: 'string' },
-                        ethAmount: { type: 'long' },
-                        ethTrxHash: { type: 'string' },
-                        agent: { type: 'string' },
-                        createdAt: { type: 'date' }
+                        address:      { type: "text", fields: {keyword: {type: "keyword",ignore_above: 256}} },
+                        ethAmount:    {  type: "text" },
+                        ethTrxHash:   { type: "text", fields: {keyword: {type: "keyword",ignore_above: 256}} },
+                        agent:        { type: "text"},
+                        createdAt:    { type: "date" }
                     }
                 }
             })
@@ -159,7 +158,7 @@ class FaucetDb {
                     }
                 }
             })
-            .catch(logger.error(`Error running searchAddress query`))
+            .catch(error => logger.error(`Error running searchAddress query: ${error}`))
         return body
     }
 

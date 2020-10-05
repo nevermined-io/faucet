@@ -4,7 +4,8 @@ RUN apk add --no-cache --update\
     python \
     make \
     g++ \
-    git
+    git \
+    curl
 
 # Create app directory
 WORKDIR /server
@@ -19,7 +20,7 @@ COPY . .
 # Build server
 RUN npm run build
 
-ENTRYPOINT ["npm", "run", "serve"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
 
 # Expose listen port
 EXPOSE 3001
