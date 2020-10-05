@@ -6,9 +6,8 @@ COMMAND_STATUS=1
 
 printf '\n\e[33m◯ Waiting for Elasticsearch to start...\e[0m\n'
 
-echo $CURL_CMD
 until [ $COMMAND_STATUS -eq 0 ] || [ $RETRY_COUNT -eq 120 ]; do
-  curl -w httpcode=%{http_code} -m 100 $DB_URI
+  curl -w httpcode=%{http_code} -m 100 $ELASTIC_URL
   COMMAND_STATUS=$?
   if [ $COMMAND_STATUS -eq 0 ]; then
     printf '\n\e[32m✔ ElasticSearch connection success.\e[0m\n'
