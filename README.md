@@ -78,7 +78,7 @@ Sample Response Body:
 {
   "success": true,
   "message": "Successfully added 3 ETH to your account.",
-  "txHash": "0xaacc762b870055deee924aeb33c08c162abdb6a71faa8531dbba84e985402b64"
+  "ethTrxHash": "0xaacc762b870055deee924aeb33c08c162abdb6a71faa8531dbba84e985402b64"
 }
 ```
 
