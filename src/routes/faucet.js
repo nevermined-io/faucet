@@ -104,7 +104,7 @@ faucetRoutes.post(
                     })
                 }
             } catch (error) {
-                logger.error(`The error ${error}`)
+                logger.error(`${error}`)
                 res.status(500).json({ success: false, message: error.message })
             }
         }
