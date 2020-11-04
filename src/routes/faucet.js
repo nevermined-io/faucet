@@ -35,7 +35,7 @@ faucetRoutes.get('/', (req, res) => {
         res.send(
             `<strong><code>
             Nevermined Faucet Server v${version}<br />
-            <a href="https://github.com/keyko-io/nevermined-faucet">github.com/keyko-io/nevermined</a><br />
+            <a href="https://github.com/nevermined-io/faucet">github.com/nevermined-io/faucet</a><br />
             <span>Running against ${network}</span>
         </code></strong>`
         )

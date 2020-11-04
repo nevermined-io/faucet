@@ -1,11 +1,11 @@
-[![banner](https://raw.githubusercontent.com/keyko-io/assets/master/images/logo/nevermined_logo_1.png)](https://nevermined.io)
+[![banner](https://raw.githubusercontent.com/nevermined-io/assets/main/images/logo/banner_logo.png)](https://nevermined.io)
 
 # Nevermined Faucet Server
 
 > Nevermined Faucet micro-service that allows to get Ether for Ethereum networks
 > [nevermined.io](https://nevermined.io)
 
-![CI Build](https://github.com/keyko-io/nevermined-faucet/workflows/Build/badge.svg)
+![CI Build](https://github.com/nevermined-io/faucet/workflows/Build/badge.svg)
 
 ---
 
@@ -31,15 +31,15 @@ Table of Contents
 - Node.js v12 or later
 - [Docker](https://www.docker.com/get-started)
 - [Docker Compose](https://docs.docker.com/compose/)
-- [Nevermined Tools](https://github.com/keyko-io/nevermined-tools)
+- [Nevermined Tools](https://github.com/nevermined-io/tools)
 
 ## Get Started
 
-Before starting to develop, you need to run a local Nevermined network using [Nevermined Tools](https://github.com/keyko-io/nevermined-tools):
+Before starting to develop, you need to run a local Nevermined network using [Nevermined Tools](https://github.com/nevermined-io/tools):
 
 ```bash
-git clone https://github.com/keyko-io/nevermined-tools.git
-cd nevermined-tools
+git clone https://github.com/nevermined-io/tools.git
+cd tools
 ./start_nevermined.sh --no-faucet --latest
 ```
 

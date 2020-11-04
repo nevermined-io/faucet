@@ -1,6 +1,6 @@
 {
   "name": "faucet",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Nevermined Faucet Server",
   "author": "Nevermined <root@nevermined.io>",
   "license": "Apache-2.0",
@@ -59,13 +59,13 @@
     "release-it": "^13.6.7",
     "rimraf": "^3.0.2"
   },
-  "homepage": "https://github.com/keyko-io/nevermined-faucet",
+  "homepage": "https://github.com/nevermined-io/faucet",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/keyko-io/nevermined-faucet.git"
+    "url": "git+https://github.com/nevermined-io/faucet.git"
   },
   "bugs": {
-    "url": "https://github.com/keyko-io/nevermined-faucet/issues"
+    "url": "https://github.com/nevermined-io/faucet/issues"
   },
   "nyc": {
     "_comment": "Purpose of this part: to do code coverage within Mocha/Chai using Istanbul",
