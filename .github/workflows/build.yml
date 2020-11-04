@@ -21,8 +21,8 @@ jobs:
       run: |
         docker login -u ${{ secrets.NEVERMINED_DOCKER_USERNAME }} -p ${{ secrets.NEVERMINED_DOCKER_TOKEN}}
         ganache-cli --port 18545 > ganache-cli.log &
-        git clone https://github.com/keyko-io/nevermined-tools
-        cd nevermined-tools        
+        git clone https://github.com/nevermined-io/tools
+        cd tools        
         rm -rf "${HOME}/.nevermined/nevermined-contracts/artifacts"
         bash ./start_nevermined.sh --no-commons --no-metadata --no-gateway --no-faucet --latest 2>&1 > start_nevermined.log &
         cd ..
