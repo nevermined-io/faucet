@@ -36,4 +36,4 @@ jobs:
         npm run build
     - name: Print logs
       if: ${{ always() }}
-      run: cat nevermined-tools/start_nevermined.log
+      run: cat tools/start_nevermined.log
