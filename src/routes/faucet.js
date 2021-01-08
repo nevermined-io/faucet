@@ -13,17 +13,8 @@ const faucetRoutes = express.Router()
 
 const faucetDb = new FaucetDb(config)
 
-const network = faucetNode.includes('localhost')
-    ? 'Spree'
-    : faucetNode.includes('integration')
-    ? 'Integration'
-    : faucetNode.includes('qa')
-    ? 'QA'
-    : faucetNode.includes('production') || faucetNode.includes('nevermined.io')
-    ? 'Production'
-    : 'Unknown'
-
-faucetRoutes.get('/', (req, res) => {
+faucetRoutes.get('/', async(req, res) => {
+    const network = await NeverminedFaucet.getNetwork()
     if (req.get('Accept') === 'application/json') {
         res.json({
             software: name,
