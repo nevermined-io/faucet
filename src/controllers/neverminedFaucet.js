@@ -109,6 +109,34 @@ const NeverminedFaucet = {
         return hash
     },
 
+    getNetwork: async() => {
+        return await web3.eth.net.getId().then((networkId) => {
+            switch (networkId) {
+                case 1:
+                    return 'Main'
+                case 2:
+                    return 'Morden'
+                case 3:
+                    return 'Ropsten'
+                case 4:
+                    return 'Rinkeby'
+                case 77:
+                    return 'POA_Sokol'
+                case 99:
+                    return 'POA_Core'
+                case 42:
+                    return 'Kovan'
+                case 100:
+                    return 'xDai'
+                case 8996:
+                    return 'Spree'
+                default:
+                    return 'Development'
+            }
+        })
+    
+    },
+
     /**
      * Get Trx hash of ETH deposit
      * @Param recordId faucet request ID

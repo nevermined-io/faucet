@@ -24,7 +24,7 @@ jobs:
         git clone https://github.com/nevermined-io/tools
         cd tools        
         rm -rf "${HOME}/.nevermined/nevermined-contracts/artifacts"
-        bash ./start_nevermined.sh --no-commons --no-metadata --no-gateway --no-faucet --latest 2>&1 > start_nevermined.log &
+        bash ./start_nevermined.sh --no-marketplace --no-metadata --no-gateway --no-faucet --latest 2>&1 > start_nevermined.log &
         cd ..
     - name: Run integration tests
       env:
