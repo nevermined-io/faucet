@@ -112,12 +112,12 @@ const NeverminedFaucet = {
             },
             config.server.privateKey
         )
-        logger.info(`SignedData: ${JSON.stringify(signedData, null, 2)}`)
+        logger.debug(`SignedData: ${JSON.stringify(signedData, null, 2)}`)
         web3.eth.sendSignedTransaction(signedData.rawTransaction)
             .once("confirmation", function() {
-                console.log('*** Transaction Confirmed ***')
+                logger.info('*** Transaction Confirmed ***')
             })
-            .on("error", console.error)
+            .on("error", logger.error)
         return signedData.transactionHash
     },
 
