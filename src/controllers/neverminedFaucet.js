@@ -19,7 +19,8 @@ const NeverminedFaucet = {
      * @Param agent
      */
     requestCrypto: async (faucetDb, requestAddress, agent) => {
-        const balance = await web3.eth.getBalance(config.server.faucetAddress)
+        const from = await web3.eth.accounts.privateKeyToAccount(config.server.privateKey)
+        const balance = await web3.eth.getBalance(from.address)
         logger.debug(`Faucet server balance: ${balance}`)
         if (
             new BigNumber(balance).isLessThan(new BigNumber(amountToTransfer))
@@ -96,17 +97,28 @@ const NeverminedFaucet = {
      * @Param requestAddress faucet tokens recipient
      */
     transferEther: async (requestAddress) => {
-        const hash = web3.eth.personal.sendTransaction(
+        const networkId = await web3.eth.net.getId()
+        const signedData = await web3.eth.accounts.signTransaction(
             {
-                from: config.server.faucetAddress,
                 to: requestAddress,
                 value: amountToTransfer,
                 gas: config.server.faucetGas,
-                gasPrice: config.server.faucetGasPrice
+                common: {
+                    customChain: {
+                        networkId: networkId,
+                        chainId: networkId
+                    }
+                }
             },
-            config.server.faucetPassword
+            config.server.privateKey
         )
-        return hash
+        logger.info(`SignedData: ${JSON.stringify(signedData, null, 2)}`)
+        web3.eth.sendSignedTransaction(signedData.rawTransaction)
+            .once("confirmation", function() {
+                console.log('*** Transaction Confirmed ***')
+            })
+            .on("error", console.error)
+        return signedData.transactionHash
     },
 
     getNetwork: async() => {
