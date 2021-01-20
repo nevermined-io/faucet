@@ -13,7 +13,7 @@ const faucetRoutes = express.Router()
 
 const faucetDb = new FaucetDb(config)
 
-faucetRoutes.get('/', async(req, res) => {
+faucetRoutes.get('/', async (req, res) => {
     const network = await NeverminedFaucet.getNetwork()
     if (req.get('Accept') === 'application/json') {
         res.json({

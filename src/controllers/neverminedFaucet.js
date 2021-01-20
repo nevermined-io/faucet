@@ -19,13 +19,16 @@ const NeverminedFaucet = {
      * @Param agent
      */
     requestCrypto: async (faucetDb, requestAddress, agent) => {
-        const balance = await web3.eth.getBalance(config.server.faucetAddress)
+        const from = await web3.eth.accounts.privateKeyToAccount(
+            config.server.privateKey
+        )
+        const balance = await web3.eth.getBalance(from.address)
         logger.debug(`Faucet server balance: ${balance}`)
         if (
             new BigNumber(balance).isLessThan(new BigNumber(amountToTransfer))
         ) {
             throw new Error(
-                `Faucet server is not available (Seed account does not have enought ETH to process the request)`
+                `Faucet server is not available (Seed account does not have enough ETH to process the request).`
             )
         }
 
@@ -96,20 +99,32 @@ const NeverminedFaucet = {
      * @Param requestAddress faucet tokens recipient
      */
     transferEther: async (requestAddress) => {
-        const hash = web3.eth.personal.sendTransaction(
+        const networkId = await web3.eth.net.getId()
+        const signedData = await web3.eth.accounts.signTransaction(
             {
-                from: config.server.faucetAddress,
                 to: requestAddress,
                 value: amountToTransfer,
                 gas: config.server.faucetGas,
-                gasPrice: config.server.faucetGasPrice
+                common: {
+                    customChain: {
+                        networkId: networkId,
+                        chainId: networkId
+                    }
+                }
             },
-            config.server.faucetPassword
+            config.server.privateKey
         )
-        return hash
+        logger.debug(`SignedData: ${JSON.stringify(signedData, null, 2)}`)
+        web3.eth
+            .sendSignedTransaction(signedData.rawTransaction)
+            .once('confirmation', function () {
+                logger.info('*** Transaction Confirmed ***')
+            })
+            .on('error', logger.error)
+        return signedData.transactionHash
     },
 
-    getNetwork: async() => {
+    getNetwork: async () => {
         return await web3.eth.net.getId().then((networkId) => {
             switch (networkId) {
                 case 1:
@@ -134,7 +149,6 @@ const NeverminedFaucet = {
                     return 'Development'
             }
         })
-    
     },
 
     /**
