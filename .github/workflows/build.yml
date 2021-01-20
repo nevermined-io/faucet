@@ -4,9 +4,7 @@ on: [push, pull_request]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v1
@@ -17,24 +15,21 @@ jobs:
         npm i
         npm install -g npm
         npm install -g ganache-cli@~6.9.1
-    - name: Run tools (network)
+    - name: Start ganache
       run: |
-        docker login -u ${{ secrets.NEVERMINED_DOCKER_USERNAME }} -p ${{ secrets.NEVERMINED_DOCKER_TOKEN}}
         MNEMONIC='loyal strategy script uniform weasel charge battle jazz earth smile crunch benefit easy census proud pair action debris flush train cloud federal moment motion'
-        ganache-cli -d -m "$MNEMONIC" --port 18545 > ganache-cli.log &
-        git clone https://github.com/nevermined-io/tools
-        cd tools        
-        rm -rf "${HOME}/.nevermined/nevermined-contracts/artifacts"
-        bash ./start_nevermined.sh --no-marketplace --no-metadata --no-gateway --no-faucet --latest 2>&1 > start_nevermined.log &
-        cd ..
+        ganache-cli -d -m "$MNEMONIC" --port 8545 > ganache-cli.log &
+    - name: Start elasticsearch
+      run: |
+        docker run -e MAX_MAP_COUNT="64000" -e discovery.type="single-node" -e ES_JAVA_OPTS="-Xms512m -Xmx512m" -d --name elasticsearch -p 9200:9200 elasticsearch:6.8.3
     - name: Run integration tests
       env:
         ELASTIC_URL: "http://localhost:9200"
         ELASTIC_INDEX: "faucetdb"
       run: |
-        ./scripts/wait-nevermined.sh
+        sleep 20
         npm run coverage
         npm run build
     - name: Print logs
       if: ${{ always() }}
-      run: cat tools/start_nevermined.log
+      run: cat ganache-cli.log

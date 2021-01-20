@@ -28,7 +28,7 @@ const NeverminedFaucet = {
             new BigNumber(balance).isLessThan(new BigNumber(amountToTransfer))
         ) {
             throw new Error(
-                `Faucet server is not available (Seed account does not have enough ETH to process the request). ${from.address} has ${balance}`
+                `Faucet server is not available (Seed account does not have enough ETH to process the request).`
             )
         }
 
