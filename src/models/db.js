@@ -74,11 +74,21 @@ class FaucetDb {
                 type: 'request',
                 body: {
                     properties: {
-                        address:      { type: "text", fields: {keyword: {type: "keyword",ignore_above: 256}} },
-                        ethAmount:    {  type: "text" },
-                        ethTrxHash:   { type: "text", fields: {keyword: {type: "keyword",ignore_above: 256}} },
-                        agent:        { type: "text"},
-                        createdAt:    { type: "date" }
+                        address: {
+                            type: 'text',
+                            fields: {
+                                keyword: { type: 'keyword', ignore_above: 256 }
+                            }
+                        },
+                        ethAmount: { type: 'text' },
+                        ethTrxHash: {
+                            type: 'text',
+                            fields: {
+                                keyword: { type: 'keyword', ignore_above: 256 }
+                            }
+                        },
+                        agent: { type: 'text' },
+                        createdAt: { type: 'date' }
                     }
                 }
             })
@@ -158,7 +168,9 @@ class FaucetDb {
                     }
                 }
             })
-            .catch(error => logger.error(`Error running searchAddress query: ${error}`))
+            .catch((error) =>
+                logger.error(`Error running searchAddress query: ${error}`)
+            )
         return body
     }
 
