@@ -1,6 +1,6 @@
 {
   "name": "faucet",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Nevermined Faucet Server",
   "author": "Nevermined <root@nevermined.io>",
   "license": "Apache-2.0",
@@ -29,7 +29,7 @@
     "express": "^4.17.1",
     "express-validator": "^6.5.0",
     "moment": "^2.27.0",
-    "@elastic/elasticsearch": "^7.9.0",
+    "@elastic/elasticsearch": "^7.13.0",
     "web3": "^1.2.9",
     "pino": "^6.6.1",
     "pino-pretty": "^4.2.1"

@@ -71,6 +71,7 @@ class FaucetDb {
         return await this.client.indices
             .putMapping({
                 index: indexName,
+                include_type_name: true,
                 type: 'request',
                 body: {
                     properties: {
@@ -186,7 +187,9 @@ class FaucetDb {
                     }
                 }
             })
-            .catch(logger.error(`Error running searchTransaction query`))
+            .catch((e) =>
+                logger.error(`Error running searchTransaction quey ${e}`)
+            )
         return body
     }
 
