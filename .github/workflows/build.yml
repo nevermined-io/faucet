@@ -21,7 +21,7 @@ jobs:
         ganache-cli -d -m "$MNEMONIC" --port 8545 > ganache-cli.log &
     - name: Start elasticsearch
       run: |
-        docker run -e MAX_MAP_COUNT="64000" -e discovery.type="single-node" -e ES_JAVA_OPTS="-Xms512m -Xmx512m" -d --name elasticsearch -p 9200:9200 elasticsearch:6.8.3
+        docker run -e MAX_MAP_COUNT="64000" -e discovery.type="single-node" -e ES_JAVA_OPTS="-Xms512m -Xmx512m" -d --name elasticsearch -p 9200:9200 elasticsearch:7.13.2
     - name: Run integration tests
       env:
         ELASTIC_URL: "http://localhost:9200"

@@ -43,7 +43,7 @@ const NeverminedFaucet = {
                 requestAddress,
                 config.database.index
             )
-            numDocuments = body.hits.total
+            numDocuments = body.hits.total.value
             if (numDocuments > 0) document = body.hits.hits[0]._source
         } catch (error) {
             throw new Error(`Error searching for documents: ${error}`)
